@@ -2,6 +2,12 @@
 
 All notable changes to this extension will be documented in this file.
 
+## 0.0.15
+
+- Added the GoLand-style icon file to the package.
+- Updated README formatting and changelog link for Marketplace alignment.
+- Added repository metadata and bumped version to 0.0.15.
+
 ## 0.0.14
 
 - Stable version used as base for the public GitHub repository.
