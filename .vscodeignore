@@ -1,0 +1,6 @@
+.git/
+.vscode/
+.vscode-test/
+node_modules/
+.DS_Store
+Thumbs.db

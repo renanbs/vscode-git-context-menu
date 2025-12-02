@@ -1,0 +1,130 @@
+{
+  "name": "git-context-menu",
+  "displayName": "Git Context Menu",
+  "description": "Adds a 'Git' submenu to the Explorer context menu with basic Git commands (GoLand-like).",
+  "version": "0.0.14",
+  "publisher": "renanbs",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "icon.png",
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:gitContextMenu.addSelected",
+    "onCommand:gitContextMenu.addAll",
+    "onCommand:gitContextMenu.commit",
+    "onCommand:gitContextMenu.push",
+    "onCommand:gitContextMenu.pull",
+    "onCommand:gitContextMenu.diff",
+    "onCommand:gitContextMenu.rollback",
+    "onCommand:gitContextMenu.newBranch"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitContextMenu.addSelected",
+        "title": "Add",
+        "category": "Git",
+        "icon": "$(diff-added)"
+      },
+      {
+        "command": "gitContextMenu.addAll",
+        "title": "Add All",
+        "category": "Git",
+        "icon": "$(diff-added)"
+      },
+      {
+        "command": "gitContextMenu.commit",
+        "title": "Commit...",
+        "category": "Git",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "gitContextMenu.diff",
+        "title": "Show Diff",
+        "category": "Git",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "gitContextMenu.rollback",
+        "title": "Rollback...",
+        "category": "Git",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "gitContextMenu.push",
+        "title": "Push...",
+        "category": "Git",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "gitContextMenu.pull",
+        "title": "Pull...",
+        "category": "Git",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "gitContextMenu.newBranch",
+        "title": "New Branch...",
+        "category": "Git",
+        "icon": "$(git-branch)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "gitContextMenu.submenu",
+        "label": "Git"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "submenu": "gitContextMenu.submenu",
+          "group": "3_git",
+          "when": "resourceScheme == 'file'"
+        }
+      ],
+      "gitContextMenu.submenu": [
+        {
+          "command": "gitContextMenu.commit",
+          "group": "1_main"
+        },
+        {
+          "command": "gitContextMenu.addSelected",
+          "group": "1_main"
+        },
+        {
+          "command": "gitContextMenu.addAll",
+          "group": "1_main"
+        },
+        {
+          "command": "gitContextMenu.diff",
+          "group": "2_inspect"
+        },
+        {
+          "command": "gitContextMenu.rollback",
+          "group": "3_edit"
+        },
+        {
+          "command": "gitContextMenu.newBranch",
+          "group": "3_edit"
+        },
+        {
+          "command": "gitContextMenu.push",
+          "group": "4_remote"
+        },
+        {
+          "command": "gitContextMenu.pull",
+          "group": "4_remote"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  }
+}
