@@ -2,7 +2,7 @@
   "name": "git-context-menu",
   "displayName": "Git Context Menu",
   "description": "Adds a 'Git' submenu to the Explorer context menu with basic Git commands (GoLand-like).",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "publisher": "renanbs",
   "repository": {
     "type": "git",

@@ -2,7 +2,7 @@
 
 A lightweight VS Code extension that adds a **GoLand-like _Git_ submenu** to the File Explorer context menu.
 
-![Git context menu Add action demo](action-add-file.gif)
+![Git context menu Add action demo](images/action-add-file.gif)
 
 ## Features
 

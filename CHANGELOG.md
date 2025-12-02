@@ -2,6 +2,10 @@
 
 All notable changes to this extension will be documented in this file.
 
+## 0.0.16
+
+- Fixed image in the README.md
+
 ## 0.0.15
 
 - Added the GoLand-style icon file to the package.
