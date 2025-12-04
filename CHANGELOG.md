@@ -2,6 +2,12 @@
 
 All notable changes to this extension will be documented in this file.
 
+## 0.0.19
+
+- Stashes view now expands to show files; clicking a file opens a diff between the stash and its base.
+- Added inline diff action for stash files in the Source Control view.
+- Bumped version to 0.0.19.
+
 ## 0.0.18
 
 - Added a **Stashes** view in Source Control with apply, pop, drop, branch, and copy actions (inline/context) to match the desired behavior.

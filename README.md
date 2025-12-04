@@ -47,6 +47,7 @@ All entries use VS Code codicons for a clean, JetBrains-style look.
 ## Source Control ▸ Stashes
 
 In the Source Control panel, the **Stashes** view lists your stashes and lets you Apply, Pop, Drop, create a Branch, or Copy the message via inline actions/context menu (matching the behavior shown in the screenshot).
+Click a stash to expand its files, and click a file to open a diff between the stash and its base.
 
 ## Requirements
 

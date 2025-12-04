@@ -2,7 +2,7 @@
   "name": "git-context-menu",
   "displayName": "Git Context Menu",
   "description": "Adds a 'Git' submenu to the Explorer context menu with basic Git commands (GoLand-like).",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "publisher": "renanbs",
   "repository": {
     "type": "git",
@@ -31,7 +31,9 @@
     "onCommand:gitContextMenu.stashPop",
     "onCommand:gitContextMenu.stashDrop",
     "onCommand:gitContextMenu.stashBranch",
-    "onCommand:gitContextMenu.stashCopy"
+    "onCommand:gitContextMenu.stashCopy",
+    "onCommand:gitContextMenu.stashOpenDiff",
+    "onView:gitContextMenu.stashesView"
   ],
   "contributes": {
     "commands": [
@@ -106,6 +108,12 @@
         "title": "Copy Stash Message",
         "category": "Git",
         "icon": "$(clippy)"
+      },
+      {
+        "command": "gitContextMenu.stashOpenDiff",
+        "title": "Open Stash Diff",
+        "category": "Git",
+        "icon": "$(diff)"
       },
       {
         "command": "gitContextMenu.push",
@@ -217,6 +225,11 @@
         {
           "command": "gitContextMenu.stashCopy",
           "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
+        },
+        {
+          "command": "gitContextMenu.stashOpenDiff",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashFile",
           "group": "inline"
         }
       ]

@@ -89,6 +89,24 @@ async function listStashes(repoRoot) {
     });
 }
 
+async function listStashFiles(repoRoot, ref) {
+  const { stdout } = await runGit(
+    ['show', '--name-status', '--pretty=format:', ref],
+    repoRoot
+  );
+
+  return stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [status, ...rest] = line.split('\t');
+      const filePath = rest.join('\t');
+      return { status: status ?? '', path: filePath ?? '' };
+    })
+    .filter((f) => f.path);
+}
+
 // Stage each selected resource individually using the git CLI (supports multi-select with Ctrl+Click)
 async function addSelected(resource, allResources) {
   try {
@@ -233,6 +251,7 @@ class StashTreeDataProvider {
     this._onDidChangeTreeData = new vscode.EventEmitter();
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     this.items = [];
+    this.fileCache = new Map();
     this.repoRoot = undefined;
   }
 
@@ -241,26 +260,17 @@ class StashTreeDataProvider {
       const baseUri = resolveBaseUri(resource, allResources);
       if (!baseUri) {
         this.items = [];
+        this.fileCache.clear();
         this._onDidChangeTreeData.fire();
         return;
       }
 
       this.repoRoot = await getRepoRoot(baseUri);
       const stashes = await listStashes(this.repoRoot);
-      this.items = stashes.map((stash) => {
-        const item = new vscode.TreeItem(stash.ref);
-        item.description = stash.message || '(no message)';
-        item.tooltip = `${stash.ref} — ${stash.message || '(no message)'}`;
-        item.contextValue = 'gitContextMenu.stashItem';
-        item.command = {
-          command: 'gitContextMenu.stashApply',
-          title: 'Apply Stash',
-          arguments: [item]
-        };
-        item.stashRef = stash.ref;
-        item.stashMessage = stash.message;
-        return item;
-      });
+      this.fileCache.clear();
+      this.items = stashes.map((stash) =>
+        this.createStashItem(stash.ref, stash.message)
+      );
       this._onDidChangeTreeData.fire();
     } catch (err) {
       vscode.window.showErrorMessage(
@@ -269,15 +279,61 @@ class StashTreeDataProvider {
     }
   }
 
+  createStashItem(ref, message) {
+    const item = new vscode.TreeItem(
+      ref,
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+    item.description = message || '(no message)';
+    item.tooltip = `${ref} — ${message || '(no message)'}`;
+    item.contextValue = 'gitContextMenu.stashItem';
+    item.stashRef = ref;
+    item.stashMessage = message;
+    return item;
+  }
+
+  createFileItem(stashRef, file) {
+    const label = file.path;
+    const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+    item.description = file.status;
+    item.tooltip = `${stashRef} — ${file.status} ${file.path}`;
+    item.contextValue = 'gitContextMenu.stashFile';
+    item.stashRef = stashRef;
+    item.filePath = file.path;
+    item.command = {
+      command: 'gitContextMenu.stashOpenDiff',
+      title: 'Open Stash Diff',
+      arguments: [item]
+    };
+    return item;
+  }
+
   getTreeItem(element) {
     return element;
   }
 
   async getChildren(element) {
-    if (element) {
-      return [];
+    if (!element) {
+      return this.items;
     }
-    return this.items;
+
+    if (element.contextValue === 'gitContextMenu.stashItem') {
+      if (!this.repoRoot) {
+        return [];
+      }
+      const cached = this.fileCache.get(element.stashRef);
+      if (cached) {
+        return cached;
+      }
+      const files = await listStashFiles(this.repoRoot, element.stashRef);
+      const fileItems = files.map((file) =>
+        this.createFileItem(element.stashRef, file)
+      );
+      this.fileCache.set(element.stashRef, fileItems);
+      return fileItems;
+    }
+
+    return [];
   }
 }
 
@@ -325,6 +381,43 @@ async function branchFromStash(item, provider) {
 async function copyStashMessage(item) {
   await vscode.env.clipboard.writeText(item?.stashMessage || '');
   vscode.window.showInformationMessage('Git: Stash message copied.');
+}
+
+function makeStashUri(ref, filePath, repoRoot) {
+  const query = encodeURIComponent(
+    JSON.stringify({ ref, path: filePath, repoRoot })
+  );
+  const pseudoPath = path.join(repoRoot, filePath);
+  return vscode.Uri.parse(`git-context-stash:${pseudoPath}?${query}`);
+}
+
+async function openStashDiff(item, provider) {
+  if (!item?.stashRef || !provider?.repoRoot || !item?.filePath) return;
+  const left = makeStashUri(`${item.stashRef}^1`, item.filePath, provider.repoRoot);
+  const right = makeStashUri(item.stashRef, item.filePath, provider.repoRoot);
+  const title = `${item.filePath} • ${item.stashRef}`;
+  await vscode.commands.executeCommand('vscode.diff', left, right, title, {
+    preview: true
+  });
+}
+
+class StashContentProvider {
+  constructor() {
+    this._onDidChange = new vscode.EventEmitter();
+    this.onDidChange = this._onDidChange.event;
+  }
+
+  async provideTextDocumentContent(uri) {
+    try {
+      const payload = JSON.parse(uri.query);
+      const { ref, path: filePath, repoRoot } = payload;
+      if (!ref || !filePath || !repoRoot) return '';
+      const { stdout } = await runGit(['show', `${ref}:${filePath}`], repoRoot);
+      return stdout;
+    } catch (err) {
+      return '';
+    }
+  }
 }
 
 function activate(context) {
@@ -390,9 +483,22 @@ function activate(context) {
       copyStashMessage(item)
     )
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashOpenDiff', (item) =>
+      openStashDiff(item, stashProvider)
+    )
+  );
 
   // Initial load of stash list for the Source Control view
   stashProvider.refresh();
+
+  const stashContentProvider = new StashContentProvider();
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      'git-context-stash',
+      stashContentProvider
+    )
+  );
 }
 
 function deactivate() {}
