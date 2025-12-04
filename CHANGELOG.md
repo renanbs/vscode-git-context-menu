@@ -2,9 +2,21 @@
 
 All notable changes to this extension will be documented in this file.
 
+## 0.0.18
+
+- Added a **Stashes** view in Source Control with apply, pop, drop, branch, and copy actions (inline/context) to match the desired behavior.
+- Removed the extra Explorer stash manager entry; stash management now lives in Source Control.
+- Bumped version to 0.0.18.
+
+## 0.0.17
+
+- Added **Manage Stashes…** to list stashes and apply, pop, drop, branch from, or copy messages.
+- Bumped version to 0.0.17.
+
 ## 0.0.16
 
-- Fixed image in the README.md
+- Added **Stash Changes…** command with message prompt and cancel support.
+- Fixed README image path so the Marketplace shows the animated demo.
 
 ## 0.0.15
 

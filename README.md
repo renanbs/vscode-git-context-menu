@@ -7,7 +7,6 @@ A lightweight VS Code extension that adds a **GoLand-like _Git_ submenu** to the
 ## Features
 
 Right-click any file in the Explorer to access:
-Modified
 
 ### Git ▸ Commit…
 
@@ -30,6 +29,11 @@ Opens the file diff view.
 
 Discards local modifications for the selected file(s).
 
+### Git ▸ Stash Changes…
+
+Prompts for an optional stash message and runs `git stash push`.
+Press **Cancel** (or **Esc**) to abort.
+
 ### Git ▸ New Branch…
 
 Opens the “Create Branch” dialog.
@@ -39,6 +43,10 @@ Opens the “Create Branch” dialog.
 Runs the standard push/pull operations.
 
 All entries use VS Code codicons for a clean, JetBrains-style look.
+
+## Source Control ▸ Stashes
+
+In the Source Control panel, the **Stashes** view lists your stashes and lets you Apply, Pop, Drop, create a Branch, or Copy the message via inline actions/context menu (matching the behavior shown in the screenshot).
 
 ## Requirements
 

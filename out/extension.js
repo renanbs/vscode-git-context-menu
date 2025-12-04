@@ -45,6 +45,50 @@ function normalizeToUris(targets) {
   return uris;
 }
 
+function resolveBaseUri(resource, allResources) {
+  let targets = [];
+
+  if (Array.isArray(allResources) && allResources.length > 0) {
+    targets = allResources;
+  } else if (Array.isArray(resource)) {
+    targets = resource;
+  } else if (resource) {
+    targets = [resource];
+  }
+
+  const uris = normalizeToUris(targets);
+
+  if (uris.length > 0) {
+    return uris[0];
+  }
+
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    return workspaceFolders[0].uri;
+  }
+
+  return undefined;
+}
+
+async function listStashes(repoRoot) {
+  const { stdout } = await runGit(
+    ['stash', 'list', '--pretty=format:%gd::%gs'],
+    repoRoot
+  );
+
+  return stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [ref, message] = line.split('::');
+      return {
+        ref: ref ?? '',
+        message: message ?? ''
+      };
+    });
+}
+
 // Stage each selected resource individually using the git CLI (supports multi-select with Ctrl+Click)
 async function addSelected(resource, allResources) {
   try {
@@ -143,6 +187,146 @@ async function newBranch() {
   }
 }
 
+// Prompt for an optional stash message and run git stash push
+async function stashChanges(resource, allResources) {
+  try {
+    const baseUri = resolveBaseUri(resource, allResources);
+
+    if (!baseUri) {
+      vscode.window.showErrorMessage('Open a folder to use Stash Changes.');
+      return;
+    }
+
+    const repoRoot = await getRepoRoot(baseUri);
+
+    const message = await vscode.window.showInputBox({
+      title: 'Stash Changes',
+      prompt: 'Enter a stash message (optional)',
+      placeHolder: 'WIP: refactor authentication flow',
+      ignoreFocusOut: true
+    });
+
+    if (message === undefined) {
+      vscode.window.setStatusBarMessage('Git: Stash cancelled', 2000);
+      return;
+    }
+
+    const args = ['stash', 'push'];
+    const trimmed = message.trim();
+    if (trimmed) {
+      args.push('-m', trimmed);
+    }
+
+    await runGit(args, repoRoot);
+
+    const label = trimmed ? ` "${trimmed}"` : '';
+    vscode.window.showInformationMessage(`Git: Stash created${label}`);
+  } catch (err) {
+    vscode.window.showErrorMessage(
+      `Failed to create stash: ${err?.message ?? String(err)}`
+    );
+  }
+}
+
+class StashTreeDataProvider {
+  constructor() {
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    this.items = [];
+    this.repoRoot = undefined;
+  }
+
+  async refresh(resource, allResources) {
+    try {
+      const baseUri = resolveBaseUri(resource, allResources);
+      if (!baseUri) {
+        this.items = [];
+        this._onDidChangeTreeData.fire();
+        return;
+      }
+
+      this.repoRoot = await getRepoRoot(baseUri);
+      const stashes = await listStashes(this.repoRoot);
+      this.items = stashes.map((stash) => {
+        const item = new vscode.TreeItem(stash.ref);
+        item.description = stash.message || '(no message)';
+        item.tooltip = `${stash.ref} — ${stash.message || '(no message)'}`;
+        item.contextValue = 'gitContextMenu.stashItem';
+        item.command = {
+          command: 'gitContextMenu.stashApply',
+          title: 'Apply Stash',
+          arguments: [item]
+        };
+        item.stashRef = stash.ref;
+        item.stashMessage = stash.message;
+        return item;
+      });
+      this._onDidChangeTreeData.fire();
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `Failed to load stashes: ${err?.message ?? String(err)}`
+      );
+    }
+  }
+
+  getTreeItem(element) {
+    return element;
+  }
+
+  async getChildren(element) {
+    if (element) {
+      return [];
+    }
+    return this.items;
+  }
+}
+
+async function applyStash(item, provider) {
+  if (!item?.stashRef || !provider?.repoRoot) return;
+  await runGit(['stash', 'apply', item.stashRef], provider.repoRoot);
+  vscode.window.showInformationMessage(`Git: Applied ${item.stashRef}.`);
+}
+
+async function popStash(item, provider) {
+  if (!item?.stashRef || !provider?.repoRoot) return;
+  await runGit(['stash', 'pop', item.stashRef], provider.repoRoot);
+  vscode.window.showInformationMessage(`Git: Popped ${item.stashRef}.`);
+  await provider.refresh();
+}
+
+async function dropStash(item, provider) {
+  if (!item?.stashRef || !provider?.repoRoot) return;
+  await runGit(['stash', 'drop', item.stashRef], provider.repoRoot);
+  vscode.window.showInformationMessage(`Git: Dropped ${item.stashRef}.`);
+  await provider.refresh();
+}
+
+async function branchFromStash(item, provider) {
+  if (!item?.stashRef || !provider?.repoRoot) return;
+  const branchName = await vscode.window.showInputBox({
+    title: 'Create branch from stash',
+    prompt: 'Enter new branch name',
+    placeHolder: 'feature/from-stash',
+    ignoreFocusOut: true
+  });
+
+  if (!branchName) {
+    vscode.window.setStatusBarMessage('Git: Branch creation cancelled', 2000);
+    return;
+  }
+
+  await runGit(['stash', 'branch', branchName, item.stashRef], provider.repoRoot);
+  vscode.window.showInformationMessage(
+    `Git: Branch '${branchName}' created from ${item.stashRef}.`
+  );
+  await provider.refresh();
+}
+
+async function copyStashMessage(item) {
+  await vscode.env.clipboard.writeText(item?.stashMessage || '');
+  vscode.window.showInformationMessage('Git: Stash message copied.');
+}
+
 function activate(context) {
   const registerSimple = (command, target) => {
     const disposable = vscode.commands.registerCommand(command, wrap(target));
@@ -161,11 +345,54 @@ function activate(context) {
     vscode.commands.registerCommand('gitContextMenu.newBranch', newBranch)
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stash', stashChanges)
+  );
+
   registerSimple('gitContextMenu.addAll', 'git.stageAll');
   registerSimple('gitContextMenu.commit', 'git.commit');
   registerSimple('gitContextMenu.push', 'git.push');
   registerSimple('gitContextMenu.pull', 'git.pull');
   registerSimple('gitContextMenu.diff', 'git.openChange');
+
+  const stashProvider = new StashTreeDataProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('gitContextMenu.stashesView', stashProvider)
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashRefresh', () =>
+      stashProvider.refresh()
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashApply', (item) =>
+      applyStash(item, stashProvider)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashPop', (item) =>
+      popStash(item, stashProvider)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashDrop', (item) =>
+      dropStash(item, stashProvider)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashBranch', (item) =>
+      branchFromStash(item, stashProvider)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitContextMenu.stashCopy', (item) =>
+      copyStashMessage(item)
+    )
+  );
+
+  // Initial load of stash list for the Source Control view
+  stashProvider.refresh();
 }
 
 function deactivate() {}

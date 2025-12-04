@@ -2,7 +2,7 @@
   "name": "git-context-menu",
   "displayName": "Git Context Menu",
   "description": "Adds a 'Git' submenu to the Explorer context menu with basic Git commands (GoLand-like).",
-  "version": "0.0.16",
+  "version": "0.0.18",
   "publisher": "renanbs",
   "repository": {
     "type": "git",
@@ -24,7 +24,14 @@
     "onCommand:gitContextMenu.pull",
     "onCommand:gitContextMenu.diff",
     "onCommand:gitContextMenu.rollback",
-    "onCommand:gitContextMenu.newBranch"
+    "onCommand:gitContextMenu.newBranch",
+    "onCommand:gitContextMenu.stash",
+    "onCommand:gitContextMenu.stashRefresh",
+    "onCommand:gitContextMenu.stashApply",
+    "onCommand:gitContextMenu.stashPop",
+    "onCommand:gitContextMenu.stashDrop",
+    "onCommand:gitContextMenu.stashBranch",
+    "onCommand:gitContextMenu.stashCopy"
   ],
   "contributes": {
     "commands": [
@@ -59,6 +66,48 @@
         "icon": "$(discard)"
       },
       {
+        "command": "gitContextMenu.stash",
+        "title": "Stash Changes...",
+        "category": "Git",
+        "icon": "$(archive)"
+      },
+      {
+        "command": "gitContextMenu.stashRefresh",
+        "title": "Refresh Stashes",
+        "category": "Git",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "gitContextMenu.stashApply",
+        "title": "Apply Stash",
+        "category": "Git",
+        "icon": "$(check)"
+      },
+      {
+        "command": "gitContextMenu.stashPop",
+        "title": "Pop Stash",
+        "category": "Git",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "gitContextMenu.stashDrop",
+        "title": "Drop Stash",
+        "category": "Git",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "gitContextMenu.stashBranch",
+        "title": "Create Branch from Stash...",
+        "category": "Git",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "gitContextMenu.stashCopy",
+        "title": "Copy Stash Message",
+        "category": "Git",
+        "icon": "$(clippy)"
+      },
+      {
         "command": "gitContextMenu.push",
         "title": "Push...",
         "category": "Git",
@@ -83,6 +132,14 @@
         "label": "Git"
       }
     ],
+    "views": {
+      "scm": [
+        {
+          "id": "gitContextMenu.stashesView",
+          "name": "Stashes"
+        }
+      ]
+    },
     "menus": {
       "explorer/context": [
         {
@@ -113,6 +170,10 @@
           "group": "3_edit"
         },
         {
+          "command": "gitContextMenu.stash",
+          "group": "3_edit"
+        },
+        {
           "command": "gitContextMenu.newBranch",
           "group": "3_edit"
         },
@@ -123,6 +184,40 @@
         {
           "command": "gitContextMenu.pull",
           "group": "4_remote"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "gitContextMenu.stashRefresh",
+          "when": "view == gitContextMenu.stashesView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gitContextMenu.stashApply",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
+        },
+        {
+          "command": "gitContextMenu.stashPop",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
+        },
+        {
+          "command": "gitContextMenu.stashDrop",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
+        },
+        {
+          "command": "gitContextMenu.stashBranch",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
+        },
+        {
+          "command": "gitContextMenu.stashCopy",
+          "when": "view == gitContextMenu.stashesView && viewItem == gitContextMenu.stashItem",
+          "group": "inline"
         }
       ]
     }
