@@ -1,19 +1,39 @@
 {
   "name": "git-context-menu",
   "displayName": "Git Context Menu",
-  "description": "Adds a 'Git' submenu to the Explorer context menu with basic Git commands (GoLand-like).",
-  "version": "0.0.19",
+  "description": "Adds a Git submenu to the VS Code Explorer context menu with common Git actions like Add, Commit, Push, Pull, Diff and Stash. Inspired by JetBrains IDE Git workflows.",
+  "version": "0.0.20",
   "publisher": "renanbs",
   "repository": {
     "type": "git",
     "url": "https://github.com/renanbs/vscode-git-context-menu"
   },
+  "homepage": "https://github.com/renanbs/vscode-git-context-menu",
+  "bugs": {
+    "url": "https://github.com/renanbs/vscode-git-context-menu/issues"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
+  "extensionKind": [
+    "workspace",
+    "ui"
+  ],
   "icon": "icon.png",
-  "categories": [
+ "categories": [
+    "Source Control",
     "Other"
+  ],
+
+  "keywords": [
+    "git",
+    "scm",
+    "git menu",
+    "git context menu",
+    "explorer git",
+    "git workflow",
+    "vscode git",
+    "git tools"
   ],
   "main": "./out/extension.js",
   "activationEvents": [
