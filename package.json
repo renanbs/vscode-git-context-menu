@@ -2,7 +2,7 @@
   "name": "git-context-menu",
   "displayName": "Git Context Menu",
   "description": "Adds a Git submenu to the VS Code Explorer context menu with common Git actions like Add, Commit, Push, Pull, Diff and Stash. Inspired by JetBrains IDE Git workflows.",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "publisher": "renanbs",
   "repository": {
     "type": "git",

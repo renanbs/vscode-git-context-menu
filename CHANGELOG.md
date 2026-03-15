@@ -2,6 +2,15 @@
 
 All notable changes to this extension will be documented in this file.
 
+## 0.0.21
+
+- Added metadata to the extension to improve its visibility and functionality in the Marketplace.
+
+## 0.0.20
+
+- Added metadata to the extension to improve its visibility and functionality in the Marketplace.
+- Bumped version to 0.0.20.
+
 ## 0.0.19
 
 - Stashes view now expands to show files; clicking a file opens a diff between the stash and its base.
